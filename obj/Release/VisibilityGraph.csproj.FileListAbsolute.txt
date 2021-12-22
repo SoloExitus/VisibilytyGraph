@@ -1,0 +1,10 @@
+C:\Users\Idea\source\repos\VisibilityGraph\bin\Release\VisibilityGraph.exe.config
+C:\Users\Idea\source\repos\VisibilityGraph\bin\Release\VisibilityGraph.exe
+C:\Users\Idea\source\repos\VisibilityGraph\bin\Release\VisibilityGraph.pdb
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.csprojAssemblyReference.cache
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.Form1.resources
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.Properties.Resources.resources
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.csproj.GenerateResource.cache
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.csproj.CoreCompileInputs.cache
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.exe
+C:\Users\Idea\source\repos\VisibilityGraph\obj\Release\VisibilityGraph.pdb
