@@ -8,3 +8,13 @@ C:\Users\Idea\source\repos\VisibilityGraph\obj\Debug\VisibilityGraph.csproj.Gene
 C:\Users\Idea\source\repos\VisibilityGraph\obj\Debug\VisibilityGraph.csproj.CoreCompileInputs.cache
 C:\Users\Idea\source\repos\VisibilityGraph\obj\Debug\VisibilityGraph.exe
 C:\Users\Idea\source\repos\VisibilityGraph\obj\Debug\VisibilityGraph.pdb
+C:\Users\Idea\Desktop\VisibilityGraph\bin\Debug\VisibilityGraph.exe.config
+C:\Users\Idea\Desktop\VisibilityGraph\bin\Debug\VisibilityGraph.exe
+C:\Users\Idea\Desktop\VisibilityGraph\bin\Debug\VisibilityGraph.pdb
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.csprojAssemblyReference.cache
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.Form1.resources
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.Properties.Resources.resources
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.csproj.GenerateResource.cache
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.csproj.CoreCompileInputs.cache
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.exe
+C:\Users\Idea\Desktop\VisibilityGraph\obj\Debug\VisibilityGraph.pdb

@@ -19,7 +19,7 @@ namespace VisibilityGraph
         List<PointFP> GlobalVertexes;
         List<edge> GlobalEdges;
 
-        List<int> Order;
+        List<int> TraversalOrder;
 
         float[,] VisabilityMatrix;
 
@@ -52,15 +52,6 @@ namespace VisibilityGraph
 
         }
 
-        //class PointDist : IComparer<edge>
-        //{
-        //    public int Compare(edge f, edge s)
-        //    {
-        //        return 
-                
-        //    }
-        //}
-
         public Form1()
         {
             InitializeComponent();
@@ -74,7 +65,7 @@ namespace VisibilityGraph
             GlobalVertexes = new List<PointFP>();
             GlobalEdges = new List<edge>();
 
-            Order = new List<int>();
+            TraversalOrder = new List<int>();
 
             graph = CreateGraphics();
         }
@@ -100,7 +91,7 @@ namespace VisibilityGraph
             Polygons.Clear();
             GlobalVertexes.Clear();
             GlobalEdges.Clear();
-            Order.Clear();
+            TraversalOrder.Clear();
 
             int polygonCounter = 0;
             int globalPointCounter = 0;
@@ -122,7 +113,8 @@ namespace VisibilityGraph
                         globalPointCounter++;
                     }
                 }
-                Order.Add(bypass(polygonVertexes));
+
+                TraversalOrder.Add(bypass(polygonVertexes));
                 Polygons.Add(polygonVertexes);
                 polygonCounter++;
 
@@ -205,12 +197,19 @@ namespace VisibilityGraph
             {
                 X = point.X;
                 Y = point.Y;
-                angle = (float)Math.Atan2(point.Y - center.Y, point.X - center.X);
+                angle = (float)Math.Atan2(point.X - center.X, point.Y - center.Y);
             }
 
             public void RecalculateAngle(PointF center)
             {
-                angle = (float)Math.Atan2(Y - center.Y, X - center.X);
+                angle = (float)Math.Atan2(X - center.X, Y - center.Y);
+            }
+
+            public PointFP(PointFP p)
+            {
+                X = p.X;
+                Y = p.Y;
+                angle = p.angle;
             }
 
             public PointFP(PointF p)
@@ -241,7 +240,7 @@ namespace VisibilityGraph
         {
             List<PointFP> polygon = polygons[t.polygonIndex];
             return SideVectorPoint(polygon[(t.pointIndex + polygon.Count() - 1) % polygon.Count()].ToPointF(),
-                                   polygon[(t.pointIndex + 1) % polygon.Count()].ToPointF(), t.ToPointF())* Order[t.polygonIndex] >= 0;
+                                   polygon[(t.pointIndex + 1) % polygon.Count()].ToPointF(), t.ToPointF())* TraversalOrder[t.polygonIndex] >= 0;
         }
 
         //точно рабочий метод xD
@@ -250,11 +249,19 @@ namespace VisibilityGraph
         //    return SideVectorPoint(pol[(pol.Count() + index - 1) % pol.Count()].ToPointF(), pol[(index + 1) % pol.Count()].ToPointF(), pol[index].ToPointF()) < 0;
         //}
 
-        class PolarAngle : IComparer<PointFP>
+        class AngleComparer : IComparer<PointFP>
         {
             public int Compare(PointFP f, PointFP s)
             {
                 return f.angle.CompareTo(s.angle);
+            }
+        }
+
+        class XComparer : IComparer<PointFP>
+        {
+            public int Compare(PointFP f, PointFP s)
+            {
+                return f.X.CompareTo(s.X);
             }
         }
 
@@ -276,8 +283,11 @@ namespace VisibilityGraph
             return (s.X - f.X) * (s.X - f.X) + (s.Y - f.Y) * (s.Y - f.Y);
         }
 
-        private bool isIntersection(PointF StartF, PointF EndF, PointF StartS, PointF EndS)
+        private bool isIntersection(PointF StartF, PointF EndF, edge testEdge)
         {
+            PointF StartS = testEdge.a;
+            PointF EndS = testEdge.b;
+
             if (EndF == StartS || EndF == EndS)
                 return false;
 
@@ -325,15 +335,6 @@ namespace VisibilityGraph
 
         private bool isSectorVertex(PointFP v, PointFP t)
         {
-            if (t.ToPointF() == new PointF(300, 46))
-            {
-                int o = 0;
-            }
-
-            if (v.ToPointF() == new Point(300, 360))
-            {
-                int o = 0;
-            }
 
             List<PointFP> polygon = Polygons[v.polygonIndex];
 
@@ -343,26 +344,80 @@ namespace VisibilityGraph
             float lr = SideVectorPoint(v.ToPointF(), left.ToPointF(), t.ToPointF());
             float rr = SideVectorPoint(v.ToPointF(), right.ToPointF(), t.ToPointF());
 
-            lr *= Order[v.polygonIndex];
-            rr *= Order[v.polygonIndex];
+            lr *= TraversalOrder[v.polygonIndex];
+            rr *= TraversalOrder[v.polygonIndex];
 
             if (lr > 0 && rr < 0) return true;
 
             return false;
         }
 
+        private bool LuchSegment(PointF v,PointF w, edge testEdge)
+        {
+
+            PointF StartF = v;
+            PointF EndF = w;
+
+            PointF StartS = testEdge.a;
+            PointF EndS = testEdge.b;
+
+
+            if (EndF == StartS || EndF == EndS)
+                return false;
+
+            if (StartF == StartS || StartF == EndS)
+                return false;
+
+            double det = (EndF.X - StartF.X) * (StartS.Y - EndS.Y) -
+                (EndF.Y - StartF.Y) * (StartS.X - EndS.X);
+
+            // Have not collision with segment
+            if (det == 0.0)
+                return false;
+
+            double det1 = (StartS.X - StartF.X) * (StartS.Y - EndS.Y) -
+                (StartS.Y - StartF.Y) * (StartS.X - EndS.X);
+
+            double det2 = (EndF.X - StartF.X) * (StartS.Y - StartF.Y) -
+                (EndF.Y - StartF.Y) * (StartS.X - StartF.X);
+
+            double t = det1 / det;
+            double r = det2 / det;
+
+            if ((0 <= t)  && (0 <= r) && (r <= 1))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private List<edge> GetIncidentEdges(PointFP p)
+        {
+            List<edge> Edges = new List<edge>();
+
+            List<PointFP> polygon = Polygons[p.polygonIndex];
+
+            edge first = new edge(polygon[(polygon.Count() + p.pointIndex - 1)% polygon.Count()].ToPointF(), p.ToPointF());
+            edge second = new edge(p.ToPointF(), polygon[(p.pointIndex + 1)% polygon.Count()].ToPointF());
+
+            Edges.Add(first);
+            Edges.Add(second);
+
+            return Edges;
+        }
+
         private void visibility_Click(object sender, EventArgs e)
         {
-            if (GlobalVertexes.Count() == 0)
+            if (GlobalVertexes.Count() < 3)
                 return;
 
-            bool a = isIntersection(new PointF(162, 165), new PointF(300, 46), new PointF(300, 46), new PointF(162, 165));
+            List<PointFP> VOrder = new List<PointFP>(GlobalVertexes);
 
-            bool b = isIntersection(new PointF(415, 293), new PointF(300, 46), new PointF(300, 46), new PointF(415, 293));
-            
-            for(int i=0;i< GlobalVertexes.Count(); i++)
+            VOrder.Sort(new XComparer());
+
+            for(int i=0;i< VOrder.Count(); i++)
             {
-                PointFP v = GlobalVertexes[i];
+                PointFP v = VOrder[i];
 
                 if (isConvexVertex(v, Polygons))
                 {
@@ -375,20 +430,40 @@ namespace VisibilityGraph
                         }
                     );
 
-                    OrderVertexes.Sort(new PolarAngle());
+                    OrderVertexes.Sort(new AngleComparer());
+
+                    List<PointFP> ClearOrderVertex = new List<PointFP>();
+
+                    foreach(PointFP p in OrderVertexes)
+                    {
+                        if ( 0 < p.angle)
+                            ClearOrderVertex.Add(p);
+                    }
+                    
 
                     List<edge> status = new List<edge>();
 
-                    for(int k=0;k< OrderVertexes.Count();k++)
-                    {
-                        PointFP point = OrderVertexes[k];
+                    PointFP w = new PointFP(v);
+                    w.Y += 1;
 
-                        if (point.ToPointF() == v.ToPointF())
+                    for (int s=0;s<GlobalEdges.Count();s++)
+                    {
+                        if (LuchSegment(v.ToPointF(), w.ToPointF(), GlobalEdges[s]))
+                            status.Add(GlobalEdges[s]);
+                    }
+
+                    for(int k=0;k< ClearOrderVertex.Count();k++)
+                    {
+                        PointFP point = ClearOrderVertex[k];
+
+                        if (point.globalIndex == v.globalIndex)
                             continue;
 
-                        GlobalEdges.ForEach((edge) =>
+                        List<edge> Incident = GetIncidentEdges(point);
+
+                        Incident.ForEach((edge) =>
                             {
-                                if ( edge.isEdgeVertex(point.ToPointF()) && !edge.isEdgeVertex(v.ToPointF()))
+                                if (!edge.isEdgeVertex(v.ToPointF()) )
                                 {
                                     if (status.Contains(edge))
                                         status.Remove(edge);
@@ -400,19 +475,16 @@ namespace VisibilityGraph
 
                         bool visibility = true;
 
-
                         // проверить что point не лежит в конусе образованном ребрами V
-                        if (isSectorVertex(v, point))
+                        if (isSectorVertex(v, point) || isSectorVertex(point, v))
                         {
                             visibility = false;
                         }
                         
-
-                        
                         for(int j = 0; j < status.Count() && visibility; j++)
                         {
 
-                            if (isIntersection(v.ToPointF(), point.ToPointF(), status[j].a, status[j].b))
+                            if (isIntersection(v.ToPointF(), point.ToPointF(), status[j]))
                             {
                                 visibility = false;
                             }
@@ -422,33 +494,37 @@ namespace VisibilityGraph
                         if (visibility)
                         {
                             float dist = (float)Math.Sqrt((double)(point.X - v.X) * (point.X - v.X) + (double)(point.Y - v.Y) * (point.Y - v.Y));
-                            VisabilityMatrix[i, point.globalIndex] = dist;
-                            //VisabilityMatrix[point.globalIndex, i] = dist;
+                            VisabilityMatrix[v.globalIndex, point.globalIndex] = dist;
+                            VisabilityMatrix[point.globalIndex, v.globalIndex] = dist;
                             // записать в матрицу в клетку [i][k] расстояние между v и point
                             // и в [k][i]
                         }
                         else
                         {
-                            VisabilityMatrix[i, point.globalIndex] = float.MaxValue;
-                            //VisabilityMatrix[point.globalIndex, i] = float.MaxValue;
+                            VisabilityMatrix[v.globalIndex, point.globalIndex] = float.MaxValue;
+                            VisabilityMatrix[point.globalIndex, v.globalIndex] = float.MaxValue;
                             // максимальное число в записать в ячейки
                         }
-                        VisabilityMatrix[i, i] = 0;
+
+                        VisabilityMatrix[v.globalIndex, v.globalIndex] = 0;
                     }
 
                 }
-                else
-                {
-                    for(int t=0;t< GlobalVertexes.Count();t++)
+                
+            }
+
+            for (int t = 0; t < GlobalVertexes.Count(); t++)
+            {
+                if (!isConvexVertex(GlobalVertexes[t], Polygons))
+                    for(int ts =0;ts< GlobalVertexes.Count();ts++)
                     {
-                        //if (t == i)
+                        //if (t == ts)
                         //    continue;
-
-                        VisabilityMatrix[i, t] = float.MaxValue;
-                        VisabilityMatrix[t, i] = float.MaxValue;
+                       
+                        VisabilityMatrix[ts, t] = float.MaxValue;
+                        VisabilityMatrix[t, ts] = float.MaxValue;
                     }
-                    // записываем максимальные значения в матрицу ( строка и столбец)
-                }
+                
             }
 
             DrawWays();
