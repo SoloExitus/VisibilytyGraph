@@ -52,6 +52,15 @@ namespace VisibilityGraph
 
         }
 
+        //class PointDist : IComparer<edge>
+        //{
+        //    public int Compare(edge f, edge s)
+        //    {
+        //        return 
+                
+        //    }
+        //}
+
         public Form1()
         {
             InitializeComponent();
@@ -70,12 +79,11 @@ namespace VisibilityGraph
             graph = CreateGraphics();
         }
 
-        private int bypass(int max, List<PointFP> pol)
+        private int bypass(List<PointFP> pol)
         {
             if (pol.Count() < 3)
                 return 1;
-
-            float res = SideVectorPoint(pol[max].ToPointF(),pol[(max - 1 + pol.Count())% pol.Count()].ToPointF(),pol[(max + 1 ) % pol.Count()].ToPointF());
+            float res = SideVectorPoint(pol[1].ToPointF(),pol[0].ToPointF(),pol[2].ToPointF());
             if (res > 0)
                 return 1;
             return -1;
@@ -100,7 +108,6 @@ namespace VisibilityGraph
             {
                 List<PointFP> polygonVertexes = new List<PointFP>();
                 int pointCounter = 0;
-                int MaxX = 0;
                 foreach (XElement pointElement in polygonElement.Elements("point"))
                 {
                     XAttribute pointX = pointElement.Attribute("x");
@@ -111,15 +118,11 @@ namespace VisibilityGraph
                         PointFP Vertex = new PointFP((float)pointX, (float)pointY, polygonCounter, pointCounter, globalPointCounter);
                         polygonVertexes.Add(Vertex);
                         GlobalVertexes.Add(Vertex);
-
-                        if (Vertex.X > polygonVertexes[MaxX].X)
-                            MaxX = pointCounter;
-
                         pointCounter++;
                         globalPointCounter++;
                     }
                 }
-                Order.Add(bypass(MaxX, polygonVertexes));
+                Order.Add(bypass(polygonVertexes));
                 Polygons.Add(polygonVertexes);
                 polygonCounter++;
 
@@ -322,6 +325,16 @@ namespace VisibilityGraph
 
         private bool isSectorVertex(PointFP v, PointFP t)
         {
+            if (t.ToPointF() == new PointF(300, 46))
+            {
+                int o = 0;
+            }
+
+            if (v.ToPointF() == new Point(300, 360))
+            {
+                int o = 0;
+            }
+
             List<PointFP> polygon = Polygons[v.polygonIndex];
 
             PointFP left = polygon[(polygon.Count() + v.pointIndex - 1) % polygon.Count()];
@@ -353,13 +366,40 @@ namespace VisibilityGraph
 
                 if (isConvexVertex(v, Polygons))
                 {
-                    for(int k=0;k< GlobalVertexes.Count();k++)
+                    // работает алгоритм видимости для вершины
+                    List<PointFP> OrderVertexes = new List<PointFP>(GlobalVertexes);
+
+                    OrderVertexes.ForEach((point) =>
+                        {
+                            point.RecalculateAngle(v.ToPointF());
+                        }
+                    );
+
+                    OrderVertexes.Sort(new PolarAngle());
+
+                    List<edge> status = new List<edge>();
+
+                    for(int k=0;k< OrderVertexes.Count();k++)
                     {
-                        if (i == k)
+                        PointFP point = OrderVertexes[k];
+
+                        if (point.ToPointF() == v.ToPointF())
                             continue;
-                        PointFP point = GlobalVertexes[k];
+
+                        GlobalEdges.ForEach((edge) =>
+                            {
+                                if ( edge.isEdgeVertex(point.ToPointF()) && !edge.isEdgeVertex(v.ToPointF()))
+                                {
+                                    if (status.Contains(edge))
+                                        status.Remove(edge);
+                                    else
+                                        status.Add(edge);
+                                }
+                            }
+                        );
 
                         bool visibility = true;
+
 
                         // проверить что point не лежит в конусе образованном ребрами V
                         if (isSectorVertex(v, point))
@@ -367,10 +407,12 @@ namespace VisibilityGraph
                             visibility = false;
                         }
                         
-                        for(int j = 0; j < GlobalEdges.Count() && visibility; j++)
+
+                        
+                        for(int j = 0; j < status.Count() && visibility; j++)
                         {
 
-                            if (isIntersection(v.ToPointF(), point.ToPointF(), GlobalEdges[j].a, GlobalEdges[j].b))
+                            if (isIntersection(v.ToPointF(), point.ToPointF(), status[j].a, status[j].b))
                             {
                                 visibility = false;
                             }
